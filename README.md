@@ -5,16 +5,20 @@ The extracted global-metadata.dat file plus it's corresponding libil2cpp.so file
 
 It is often the case that the global-metadata.dat file is encrypted, this tool allows you to dump a decrypted copy of the file.
 
+By default this script will attempt to automatically determine the size of the metadata file.
+
 ## Usage
 ```sh
-python dump-metadata.py package_name offset
+python dump-metadata.py package_name offset [-s SIZE]
 ```
 
-example package name:
+Example package name:
 com.company.appname
 
-example offset:
+Example offset:
 0x1234567
+
+Size of the metadata is given in bytes, default behavior is to automatically assess size, the --size option will bypass this assessment and manually set the file size
 
 ## How to locate the offset
 This example will use Ghidra, a similar process can be followed using IDA.
