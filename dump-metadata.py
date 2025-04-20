@@ -1,4 +1,3 @@
-import sys
 import frida
 import os
 import time
