@@ -7,10 +7,16 @@ function awaitForCondition() {
     var i = setInterval(function () {
         var info = Process.findModuleByName('libil2cpp.so');
         if (info) {
-            console.log("=== libil2cpp.so base address found at: " + info.base + ' ===\n');
+            console.log("\n=== libil2cpp.so base address found at: " + info.base + ' ===\n');
             clearInterval(i);
             baseAddr = info.base;
-            getFileAddress();
+
+            if (metadataFunctionOffset.equals(0x0)) {
+                console.log("=== No offset provided, beginning manual memory search ===\n");
+                memorySearch();
+            } else {
+                getFileAddress();
+            }
         }
     }, 100);
 }
@@ -30,6 +36,29 @@ function getFileAddress() {
     });
 }
 
+function memorySearch() {
+    let patternFound = false;
+    var memoryRanges = Process.enumerateRangesSync('rw-');
+    let completedSearchesCount = 0;
+    memoryRanges.forEach(range => {
+        Memory.scan(range.base, range.size, filePattern, {
+            onMatch(address, size) {
+                console.log('=== File Detected in Memory ===\n');
+                fileAddr = ptr(address);
+                patternFound = true;
+
+                dumpMemory();
+            },
+            onComplete() {
+                completedSearchesCount++;
+                if (!patternFound && (completedSearchesCount === memoryRanges.length)) {
+                    memorySearch();
+                }
+            }
+        });
+    });
+}
+
 function dumpMemory() {
     console.log("The first several bytes of the hex dump should look something like this:");
     console.log("---------------\n| af 1b b1 fa |\n---------------\n");
@@ -38,6 +67,8 @@ function dumpMemory() {
 
     let length = 0;
     if (!fileSize) {
+        console.log("=== File size unspecified, automatically asessing file size ===\n");
+
         var p = ptr(fileAddr);
         let loop = true;
         let currBytes = [];
@@ -60,6 +91,7 @@ function dumpMemory() {
             p = p.add(lineLength);
         }
     } else {
+        console.log(`=== Manually setting file size to ${fileSize} bytes ===\n`);
         length = fileSize;
     }
 

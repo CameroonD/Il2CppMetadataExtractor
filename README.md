@@ -1,24 +1,38 @@
 # Il2CppMetadataExtractor
-Simple and easy to use [Frida](https://frida.re/) script for dumping decrypted Il2cpp global-metadata.dat files from a Unity application's memory. Tested on Android.
+Simple and easy to use [Frida](https://frida.re/) script for dumping decrypted Il2cpp global-metadata.dat files from a Unity application's memory, utilizing multiple methods. Tested on Android.
 
 The extracted global-metadata.dat file plus it's corresponding libil2cpp.so file can be used with tools such as [Il2CppInspector](https://github.com/djkaty/Il2CppInspector)/[Il2CppInspectorRedux](https://github.com/LukeFZ/Il2CppInspectorRedux) and ultimately [Ghidra](https://github.com/NationalSecurityAgency/ghidra) or [IDA](https://hex-rays.com/) in order to aid in the reverse engineering of il2cpp Unity projects.
 
-It is often the case that the global-metadata.dat file is encrypted, this tool allows you to dump a decrypted copy of the file.
+It is often the case that the global-metadata.dat file is encrypted, this tool allows you to dump a decrypted copy of the file; in the best case, using only the name of the target application.
 
-By default this script will attempt to automatically determine the size of the metadata file.
+**IMPORTANT**: By default this script will attempt to automatically determine the size and location of the metadata file. If this process takes too long and the program crashes before either can take place, follow the guide "[How to locate the offset](#how-to-locate-the-offset)" and/or specify the size manually. Size is typically the same as the encrypted file. It is also possible that the file will not be found by the default search pattern, in that case a custom pattern may be necessary.
 
 ## Usage
 ```sh
-python dump-metadata.py package_name offset [-s SIZE]
+python dump-metadata.py [-h] [-o OFFSET] [-s SIZE] [-p PATTERN] package_name
 ```
 
-Example package name:
-com.company.appname
+```
+positional arguments:
+  package_name          Name of the target application ex: com.company.appname
+
+options:
+  -h, --help            show this help message and exit
+  -o OFFSET, --offset OFFSET
+                        Offset of a function which would return a pointer to the metadata file, see readme
+  -s SIZE, --size SIZE  Manually specify the size of the file in bytes
+  -p PATTERN, --pattern PATTERN
+                        Manually specify a file search pattern (default: "af 1b b1 fa 1? 00 00 00 00")
+```
+
+Offset is an optional parameter, specifying the offset will grab the file using an alternative and faster method. Default behavior when offset is not specified is to search heap memory for the metadata file. The search pattern used for this task can be updated with the --pattern parameter. To locate the offset parameter, see "[How to locate the offset](#how-to-locate-the-offset)".
 
 Example offset:
 0x1234567
 
-Size of the metadata is given in bytes, default behavior is to automatically assess size, the --size option will bypass this assessment and manually set the file size
+Pattern may need to be specified manually depending on Unity version. If finding a pattern that works proves difficult, it is suggested that the [offset](#how-to-locate-the-offset) method should be used at least for the first extraction. A pattern specific to the project/unity version can be gleaned from decrypted metadata files.
+
+Size of the metadata file is given in bytes, default behavior is to automatically assess size, the --size option will bypass this assessment and manually set the file size.
 
 ## How to locate the offset
 This example will use Ghidra, a similar process can be followed using IDA.
